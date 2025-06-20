@@ -9,18 +9,64 @@ import ServiceStats from "@/components/dealership/ServiceStats"
 
 export default function DealershipService() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen)
   }
 
-  // Mock data for vehicles in service
-  const vehiclesInService = [
+  const toggleDropdown = (vehicleId: string) => {
+    setDropdownOpen(dropdownOpen === vehicleId ? null : vehicleId)
+  }
+
+  const handleAction = (action: string, vehicleId: string) => {
+    console.log(`Action: ${action} for vehicle: ${vehicleId}`)
+    setDropdownOpen(null)
+    // Handle the action here
+  }
+
+  // Expanded mock data for vehicles in service
+  const allVehiclesInService = [
     { id: 'OLY001', model: 'Model 01', customer: 'John Smith', status: 'In Progress', tech: 'Mike Johnson', eta: '2 hours' },
     { id: 'OLY042', model: 'Model 42', customer: 'Sarah Davis', status: 'Scheduled', tech: 'Alex Brown', eta: '4 hours' },
     { id: 'OLY084', model: 'Model 84', customer: 'Robert Wilson', status: 'Completed', tech: 'Emily Chen', eta: 'Ready' },
     { id: 'OLY017', model: 'Model 01', customer: 'Lisa Garcia', status: 'In Progress', tech: 'David Lee', eta: '1 hour' },
+    { id: 'OLY025', model: 'Model 42', customer: 'Michael Brown', status: 'Scheduled', tech: 'Mike Johnson', eta: '3 hours' },
+    { id: 'OLY031', model: 'Model 84', customer: 'Jennifer White', status: 'In Progress', tech: 'Alex Brown', eta: '45 min' },
+    { id: 'OLY058', model: 'Model 01', customer: 'David Johnson', status: 'Completed', tech: 'Emily Chen', eta: 'Ready' },
+    { id: 'OLY063', model: 'Model 42', customer: 'Anna Martinez', status: 'Scheduled', tech: 'David Lee', eta: '5 hours' },
+    { id: 'OLY079', model: 'Model 84', customer: 'Chris Anderson', status: 'In Progress', tech: 'Mike Johnson', eta: '90 min' },
+    { id: 'OLY092', model: 'Model 01', customer: 'Emma Thompson', status: 'Completed', tech: 'Alex Brown', eta: 'Ready' },
+    { id: 'OLY105', model: 'Model 42', customer: 'James Wilson', status: 'Scheduled', tech: 'Emily Chen', eta: '6 hours' },
+    { id: 'OLY118', model: 'Model 84', customer: 'Sophia Miller', status: 'In Progress', tech: 'David Lee', eta: '30 min' },
+    { id: 'OLY134', model: 'Model 01', customer: 'Oliver Garcia', status: 'Completed', tech: 'Mike Johnson', eta: 'Ready' },
+    { id: 'OLY147', model: 'Model 42', customer: 'Isabella Rodriguez', status: 'Scheduled', tech: 'Alex Brown', eta: '2.5 hours' },
+    { id: 'OLY159', model: 'Model 84', customer: 'Ethan Martinez', status: 'In Progress', tech: 'Emily Chen', eta: '20 min' },
+    { id: 'OLY162', model: 'Model 01', customer: 'Mia Johnson', status: 'Completed', tech: 'David Lee', eta: 'Ready' },
+    { id: 'OLY173', model: 'Model 42', customer: 'Lucas Brown', status: 'Scheduled', tech: 'Mike Johnson', eta: '4.5 hours' },
+    { id: 'OLY186', model: 'Model 84', customer: 'Ava Davis', status: 'In Progress', tech: 'Alex Brown', eta: '1.5 hours' },
   ]
+
+  // Pagination logic
+  const totalItems = allVehiclesInService.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentVehicles = allVehiclesInService.slice(startIndex, endIndex)
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1)
+  }
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1)
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -29,6 +75,37 @@ export default function DealershipService() {
       case 'Scheduled': return 'bg-yellow-500 text-white'
       default: return 'bg-gray-200 text-gray-800'
     }
+  }
+
+  const getActionItems = (status: string) => {
+    const baseActions = ['View Details', 'Edit Service', 'Reassign Technician', 'Add Notes']
+    
+    switch (status) {
+      case 'Scheduled':
+        return [...baseActions, 'Start Service', 'Cancel Appointment']
+      case 'In Progress':
+        return [...baseActions, 'Mark as Completed', 'Request Parts', 'Update ETA']
+      case 'Completed':
+        return [...baseActions, 'Generate Invoice', 'Schedule Follow-up', 'Customer Notification']
+      default:
+        return baseActions
+    }
+  }
+
+  const getPaginationNumbers = () => {
+    const pages = []
+    const maxVisible = 5
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+    const end = Math.min(totalPages, start + maxVisible - 1)
+    
+    if (end - start < maxVisible - 1) {
+      start = Math.max(1, end - maxVisible + 1)
+    }
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i)
+    }
+    return pages
   }
 
   return (
@@ -85,7 +162,7 @@ export default function DealershipService() {
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>Vehicles in Service</CardDescription>
-                <CardTitle className="text-3xl">12</CardTitle>
+                <CardTitle className="text-3xl">{totalItems}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-600">4 completed today</p>
@@ -111,45 +188,132 @@ export default function DealershipService() {
             </Card>
           </div>
 
-          {/* Vehicle Service Status */}
+          {/* Vehicle Service Status - Bigger Section */}
           <div className="bg-white rounded-lg border border-gray-200 mb-8">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Vehicles Currently in Service</h2>
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Vehicles Currently in Service</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} vehicles
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Show:</label>
+                <select 
+                  value={itemsPerPage} 
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value))
+                    setCurrentPage(1)
+                  }}
+                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+                <span className="text-sm text-gray-600">per page</span>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Technician</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ETA</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Technician</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ETA</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {vehiclesInService.map((vehicle) => (
+                  {currentVehicles.map((vehicle) => (
                     <tr key={vehicle.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-5 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{vehicle.model}</div>
                         <div className="text-sm text-gray-500">{vehicle.id}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.customer}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(vehicle.status)}`}>
+                      <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-900">{vehicle.customer}</td>
+                      <td className="px-6 py-5 whitespace-nowrap">
+                        <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(vehicle.status)}`}>
                           {vehicle.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.tech}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.eta}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <Button variant="ghost" size="sm">Update</Button>
+                      <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-900">{vehicle.tech}</td>
+                      <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-900">{vehicle.eta}</td>
+                      <td className="px-6 py-5 whitespace-nowrap text-sm font-medium relative">
+                        <button
+                          onClick={() => toggleDropdown(vehicle.id)}
+                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                        >
+                          Actions
+                          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        
+                        {dropdownOpen === vehicle.id && (
+                          <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                            <div className="py-1">
+                              {getActionItems(vehicle.status).map((action) => (
+                                <button
+                                  key={action}
+                                  onClick={() => handleAction(action, vehicle.id)}
+                                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                >
+                                  {action}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+            
+            {/* Pagination Controls */}
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="flex items-center text-sm text-gray-600">
+                <span>Page {currentPage} of {totalPages}</span>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={goToPrevPage}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                
+                <div className="flex space-x-1">
+                  {getPaginationNumbers().map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => goToPage(page)}
+                      className={`px-3 py-2 text-sm font-medium rounded-md ${
+                        currentPage === page
+                          ? 'bg-gray-900 text-white'
+                          : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                
+                <button
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
 
